@@ -13,7 +13,7 @@ if not TOKEN:
     raise ValueError("❌ BOT_TOKEN не найден в .env файле!")
 
 # === ТВОЙ ID (ТЫ АДМИН) ===
-ADMIN_IDS = [1032384251]  # ← ТВОЙ ID
+ADMIN_IDS = [1032384251]
 
 # === СОСТОЯНИЯ ДЛЯ РАЗГОВОРА ===
 CATEGORY, SEARCH, ADMIN_ACTION, ADD_NAME, ADD_SIZE, ADD_MATERIAL, ADD_FINISH, ADD_STAVROS_PRICE, ADD_OUR_PRICE, ADD_LINK = range(10)
