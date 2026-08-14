@@ -5,14 +5,12 @@ from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ContextTypes, ConversationHandler
 
-# === ЗАГРУЖАЕМ ПЕРЕМЕННЫЕ ИЗ .env ===
 load_dotenv()
 
 TOKEN = os.getenv("BOT_TOKEN")
 if not TOKEN:
     raise ValueError("❌ BOT_TOKEN не найден в .env файле!")
 
-# === ТВОЙ ID (ТЫ АДМИН) ===
 ADMIN_IDS = [1032384251]
 
 # === СОСТОЯНИЯ ДЛЯ РАЗГОВОРА ===
