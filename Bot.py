@@ -1,6 +1,6 @@
 import os
 import json
-import asyncio
+import requests
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ContextTypes, ConversationHandler
@@ -37,14 +37,14 @@ def get_main_menu():
 
 def get_category_keyboard():
     keyboard = [[InlineKeyboardButton(f"📁 {cat}", callback_data=f"cat_{cat}")] for cat in CATEGORIES]
-    keyboard.append([InlineKeyboardButton(" В главное меню", callback_data="main_menu")])
+    keyboard.append([InlineKeyboardButton("🏠 В главное меню", callback_data="main_menu")])
     return InlineKeyboardMarkup(keyboard)
 
 def get_after_search_keyboard():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("🔍 Новый поиск", callback_data="main_search")],
         [InlineKeyboardButton("📂 Другая категория", callback_data="main_categories")],
-        [InlineKeyboardButton(" В главное меню", callback_data="main_menu")]
+        [InlineKeyboardButton("🏠 В главное меню", callback_data="main_menu")]
     ])
 
 # === ФУНКЦИИ ПОИСКА ===
@@ -73,7 +73,7 @@ def format_analogies(results, category, query):
     
     return text
 
-# === /START ===
+# === ОБРАБОТЧИКИ ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_name = update.effective_user.first_name or "друг"
     total_analogs = sum(len(items) for items in ANALOGIES_DB.values())
@@ -95,7 +95,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     return MAIN_MENU
 
-# === ОБРАБОТКА ГЛАВНОГО МЕНЮ ===
 async def main_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -104,7 +103,7 @@ async def main_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if action == "main_menu":
         await query.edit_message_text(
-            "<b>Главное меню</b>\n\nВыберите действие:",
+            "🏠 <b>Главное меню</b>\n\nВыберите действие:",
             reply_markup=get_main_menu(),
             parse_mode="HTML"
         )
@@ -130,13 +129,13 @@ async def main_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         total_analogs = sum(len(items) for items in ANALOGIES_DB.values())
         about_text = (
             "ℹ️ <b>О боте</b>\n\n"
-            "Бот для поиска аналогов товаров STAVROS и Les-WM\n\n"
+            "🤖 Бот для поиска аналогов товаров STAVROS и Les-WM\n\n"
             "🔹 <b>Что умеет:</b>\n"
             "   - Искать аналоги по названиям\n"
             "   - Показывать пары товаров\n"
             "   - Давать ссылки на оба сайта\n\n"
             f"📦 <b>В базе:</b> {total_analogs} аналогов\n\n"
-            "<b>Разработчик:</b> @seeleeeeee"
+            "👨‍💻 <b>Разработчик:</b> @seeleeeeee"
         )
         await query.edit_message_text(
             about_text,
@@ -147,7 +146,6 @@ async def main_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return MAIN_MENU
 
-# === ВЫБОР КАТЕГОРИИ ===
 async def category_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -161,7 +159,6 @@ async def category_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     return SEARCH
 
-# === ПОИСК ===
 async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.message.text
     category = context.user_data.get("category")
@@ -184,7 +181,6 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     return SEARCH
 
-# === ОТМЕНА ===
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "👋 Действие отменено.",
@@ -194,6 +190,20 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # === ЗАПУСК БОТА ===
 def main():
+    # ПРИНУДИТЕЛЬНО УДАЛЯЕМ ВЕБХУК
+    try:
+        response = requests.get(f"https://api.telegram.org/bot{TOKEN}/deleteWebhook")
+        print(f"✅ Вебхук удалён: {response.json()}")
+    except Exception as e:
+        print(f"⚠️ Ошибка удаления вебхука: {e}")
+    
+    # ПРИНУДИТЕЛЬНО СБРАСЫВАЕМ ВЕБХУК
+    try:
+        response = requests.get(f"https://api.telegram.org/bot{TOKEN}/setWebhook?url=")
+        print(f"✅ Вебхук сброшен: {response.json()}")
+    except Exception as e:
+        print(f"⚠️ Ошибка сброса вебхука: {e}")
+    
     app = Application.builder().token(TOKEN).build()
     
     conv_handler = ConversationHandler(
@@ -201,11 +211,10 @@ def main():
         states={
             MAIN_MENU: [
                 CallbackQueryHandler(main_menu_handler, pattern="^main_"),
-                CallbackQueryHandler(category_selected, pattern="^cat_"),
             ],
             CATEGORY: [
-                CallbackQueryHandler(main_menu_handler, pattern="^main_"),
                 CallbackQueryHandler(category_selected, pattern="^cat_"),
+                CallbackQueryHandler(main_menu_handler, pattern="^main_"),
             ],
             SEARCH: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, search),
@@ -218,7 +227,7 @@ def main():
     
     app.add_handler(conv_handler)
     
-    print("Бот запущен! Напиши ему /start")
+    print("🚀 Бот запущен! Жду команду /start...")
     app.run_polling()
 
 if __name__ == "__main__":
