@@ -1,6 +1,7 @@
 import os
 import json
 import requests
+import time
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ContextTypes, ConversationHandler
@@ -190,19 +191,25 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # === ЗАПУСК БОТА ===
 def main():
-    # ПРИНУДИТЕЛЬНО УДАЛЯЕМ ВЕБХУК
+    # === ПРИНУДИТЕЛЬНО УБИВАЕМ СТАРЫЙ ПРОЦЕСС ===
     try:
+        # Удаляем вебхук
         response = requests.get(f"https://api.telegram.org/bot{TOKEN}/deleteWebhook")
         print(f"✅ Вебхук удалён: {response.json()}")
-    except Exception as e:
-        print(f"⚠️ Ошибка удаления вебхука: {e}")
-    
-    # ПРИНУДИТЕЛЬНО СБРАСЫВАЕМ ВЕБХУК
-    try:
+        
+        # Сбрасываем вебхук
         response = requests.get(f"https://api.telegram.org/bot{TOKEN}/setWebhook?url=")
         print(f"✅ Вебхук сброшен: {response.json()}")
+        
+        # СБРАСЫВАЕМ getUpdates (убиваем старую сессию)
+        response = requests.get(f"https://api.telegram.org/bot{TOKEN}/getUpdates?offset=-1")
+        print(f"✅ Сессия сброшена: {response.json()}")
+        
+        # Ждём 1 секунду, чтобы Telegram обработал сброс
+        time.sleep(1)
+        
     except Exception as e:
-        print(f"⚠️ Ошибка сброса вебхука: {e}")
+        print(f"⚠️ Ошибка при сбросе: {e}")
     
     app = Application.builder().token(TOKEN).build()
     
