@@ -7,15 +7,15 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
 if not TOKEN:
-    raise ValueError("BOT_TOKEN не найден в .env файле!")
+    raise ValueError("BOT_TOKEN не найден в переменных окружения!")
 
 # === ЗАГРУЗКА АНАЛОГОВ ===
 def load_analogies():
     if os.path.exists("analogies.json"):
         with open("analogies.json", "r", encoding="utf-8") as f:
             raw_data = json.load(f)
-            # ВАЖНЫЙ ФИКС: очищаем ключи от случайных пробелов (в вашем JSON было "Ручки ")
-            return {k.strip(): v for k, v in raw_data.items()}
+            # Очищаем ключи и значения от случайных пробелов (как в твоем JSON)
+            return {k.strip(): [{inner_k.strip(): str(inner_v).strip() for inner_k, inner_v in item.items()} for item in v] for k, v in raw_data.items()}
     return {"Ручки": [], "Ножки": []}
 
 ANALOGIES_DB = load_analogies()
@@ -143,21 +143,20 @@ def main():
                 CallbackQueryHandler(category_selected, pattern="^cat_"),
             ],
         },
-        fallbacks=[CommandHandler("cancel", cancel)]
+        fallbacks=[CommandHandler("cancel", cancel)],
+        per_message=True  # <--- ЭТО УБИРАЕТ ВАРНИНГ ИЗ ЛОГОВ RENDER
     )
     application.add_handler(conv_handler)
 
-    # Render автоматически передает порт в переменной окружения PORT
     port = int(os.environ.get('PORT', 10000))
+    webhook_url = f"https://bot-stavross.onrender.com/{TOKEN}"
     
     print("🚀 Запуск бота с использованием встроенного вебхука...")
-    # run_webhook сам запускает сервер и регистрирует вебхук в Telegram
     application.run_webhook(
         listen="0.0.0.0",
         port=port,
         url_path=TOKEN,
-        # ВАЖНО: замените bot-stavross.onrender.com на реальный домен вашего сервиса в Render, если он отличается
-        webhook_url=f"https://bot-stavross.onrender.com/{TOKEN}"
+        webhook_url=webhook_url
     )
 
 if __name__ == '__main__':
