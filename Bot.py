@@ -1,31 +1,25 @@
 import os
 import json
-import requests
-import asyncio
-from flask import Flask, request
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ContextTypes, ConversationHandler
 
 load_dotenv()
-
 TOKEN = os.getenv("BOT_TOKEN")
 if not TOKEN:
     raise ValueError("BOT_TOKEN не найден в .env файле!")
-
-app = Flask(__name__)
-telegram_app = None
 
 # === ЗАГРУЗКА АНАЛОГОВ ===
 def load_analogies():
     if os.path.exists("analogies.json"):
         with open("analogies.json", "r", encoding="utf-8") as f:
-            return json.load(f)
+            raw_data = json.load(f)
+            # ВАЖНЫЙ ФИКС: очищаем ключи от случайных пробелов (в вашем JSON было "Ручки ")
+            return {k.strip(): v for k, v in raw_data.items()}
     return {"Ручки": [], "Ножки": []}
 
 ANALOGIES_DB = load_analogies()
 CATEGORIES = list(ANALOGIES_DB.keys())
-
 MAIN_MENU, CATEGORY, SEARCH = range(3)
 
 # === КЛАВИАТУРЫ ===
@@ -76,7 +70,6 @@ def format_analogies(results, category, query):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_name = update.effective_user.first_name or "друг"
     total_analogs = sum(len(items) for items in ANALOGIES_DB.values())
-    
     welcome_text = (
         f"👋 Привет, <b>{user_name}</b>!\n\n"
         f"🤖 Бот для поиска аналогов STAVROS и Les-WM.\n"
@@ -115,14 +108,16 @@ async def category_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return SEARCH
 
 async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.message.text
+    query_text = update.message.text
     category = context.user_data.get("category")
+    
     if not category:
         await update.message.reply_text("⚠️ Сначала выберите категорию:", reply_markup=get_category_keyboard())
         return CATEGORY
+        
+    results = search_analogies(category, query_text)
+    reply = format_analogies(results, category, query_text)
     
-    results = search_analogies(category, query)
-    reply = format_analogies(results, category, query)
     await update.message.reply_text(reply, parse_mode="HTML", disable_web_page_preview=True, reply_markup=get_after_search_keyboard())
     return SEARCH
 
@@ -130,8 +125,8 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("👋 Отменено.", reply_markup=get_main_menu())
     return MAIN_MENU
 
-# === СОЗДАНИЕ ПРИЛОЖЕНИЯ ===
-def create_telegram_app():
+# === СОЗДАНИЕ И ЗАПУСК ПРИЛОЖЕНИЯ ===
+def main():
     application = Application.builder().token(TOKEN).build()
     
     conv_handler = ConversationHandler(
@@ -151,40 +146,19 @@ def create_telegram_app():
         fallbacks=[CommandHandler("cancel", cancel)]
     )
     application.add_handler(conv_handler)
-    return application
 
-# === FLASK МАРШРУТЫ ===
-@app.route('/')
-def health():
-    return "🤖 Бот работает!"
-
-@app.route(f'/{TOKEN}', methods=['POST'])
-def webhook():
-    try:
-        json_data = request.get_json(force=True)
-        if not json_data:
-            return "No data", 400
-        
-        update = Update.de_json(json_data, telegram_app.bot)
-        
-        # ПРАВИЛЬНЫЙ ЗАПУСК АСИНХРОННОЙ ФУНКЦИИ
-        asyncio.run(telegram_app.process_update(update))
-        
-        return "OK", 200
-    except Exception as e:
-        print(f"❌ Ошибка: {e}")
-        return "ERROR", 500
-
-# === ЗАПУСК ===
-if __name__ == "__main__":
-    telegram_app = create_telegram_app()
-    
-    # Устанавливаем вебхук
-    webhook_url = f"https://bot-stavross.onrender.com/{TOKEN}"
-    set_url = f"https://api.telegram.org/bot{TOKEN}/setWebhook?url={webhook_url}"
-    response = requests.get(set_url)
-    print(f"📡 Вебхук установлен: {response.json()}")
-    
-    # Запускаем Flask
+    # Render автоматически передает порт в переменной окружения PORT
     port = int(os.environ.get('PORT', 10000))
-    app.run(host='0.0.0.0', port=port)
+    
+    print("🚀 Запуск бота с использованием встроенного вебхука...")
+    # run_webhook сам запускает сервер и регистрирует вебхук в Telegram
+    application.run_webhook(
+        listen="0.0.0.0",
+        port=port,
+        url_path=TOKEN,
+        # ВАЖНО: замените bot-stavross.onrender.com на реальный домен вашего сервиса в Render, если он отличается
+        webhook_url=f"https://bot-stavross.onrender.com/{TOKEN}"
+    )
+
+if __name__ == '__main__':
+    main()
