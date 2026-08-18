@@ -1,6 +1,7 @@
 import os
 import json
 import requests
+import asyncio
 from flask import Flask, request
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -165,7 +166,10 @@ def webhook():
             return "No data", 400
         
         update = Update.de_json(json_data, telegram_app.bot)
-        telegram_app.process_update(update)
+        
+        # ПРАВИЛЬНЫЙ ЗАПУСК АСИНХРОННОЙ ФУНКЦИИ
+        asyncio.run(telegram_app.process_update(update))
+        
         return "OK", 200
     except Exception as e:
         print(f"❌ Ошибка: {e}")
