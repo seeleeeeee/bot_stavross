@@ -14,7 +14,6 @@ def load_analogies():
     if os.path.exists("analogies.json"):
         with open("analogies.json", "r", encoding="utf-8") as f:
             raw_data = json.load(f)
-            # Очищаем ключи и значения от случайных пробелов (как в твоем JSON)
             return {k.strip(): [{inner_k.strip(): str(inner_v).strip() for inner_k, inner_v in item.items()} for item in v] for k, v in raw_data.items()}
     return {"Ручки": [], "Ножки": []}
 
@@ -143,8 +142,7 @@ def main():
                 CallbackQueryHandler(category_selected, pattern="^cat_"),
             ],
         },
-        fallbacks=[CommandHandler("cancel", cancel)],
-        per_message=True  # <--- ЭТО УБИРАЕТ ВАРНИНГ ИЗ ЛОГОВ RENDER
+        fallbacks=[CommandHandler("cancel", cancel)]
     )
     application.add_handler(conv_handler)
 
