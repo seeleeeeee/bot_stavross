@@ -2,8 +2,24 @@ services:
   - type: web
     name: bot-stavross
     runtime: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: |
+      pip install -r requirements.txt
+      playwright install chromium
+      playwright install-deps
     startCommand: python Bot.py
     envVars:
       - key: BOT_TOKEN
         sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: les_analog_db
+          property: connectionString
+      - key: TIMEZONE
+        value: Europe/Moscow
+      - key: LOG_LEVEL
+        value: INFO
+
+databases:
+  - name: les_analog_db
+    databaseName: les_analog
+    user: postgres
