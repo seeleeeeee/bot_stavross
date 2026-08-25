@@ -1,4 +1,5 @@
 import os
+import re
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -7,11 +8,9 @@ class Config:
     # Telegram
     BOT_TOKEN = os.getenv("BOT_TOKEN")
     
-    # ВРЕМЕННО жестко задаем URL
     DATABASE_URL = "postgresql://postgre:3vnGJeGrXy6CChThJYBrdFBXNRj4n8Sa@dpg-da6jm9m1egvs739141t0-a/les_analog"
     
-    # Парсим URL
-    import re
+    # Парсим URL прямо в конструкторе класса
     match = re.match(r'postgresql://(.+):(.+)@(.+):(\d+)/(.+)', DATABASE_URL)
     if match:
         DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME = match.groups()
@@ -40,3 +39,9 @@ class Config:
         return cls.DATABASE_URL
 
 config = Config()
+
+print(f"🔍 DB_HOST: {config.DB_HOST}")
+print(f"🔍 DB_PORT: {config.DB_PORT}")
+print(f"🔍 DB_USER: {config.DB_USER}")
+print(f"🔍 DB_NAME: {config.DB_NAME}")
+print(f"🔍 DATABASE_URL: {config.DATABASE_URL}")
