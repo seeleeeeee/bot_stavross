@@ -1,5 +1,4 @@
 import os
-import re
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -8,18 +7,11 @@ class Config:
     # Telegram
     BOT_TOKEN = os.getenv("BOT_TOKEN")
     
-    DATABASE_URL = "postgresql://postgre:3vnGJeGrXy6CChThJYBrdFBXNRj4n8Sa@dpg-da6jm9m1egvs739141t0-a/les_analog"
-    
-    # Парсим URL прямо в конструкторе класса
-    match = re.match(r'postgresql://(.+):(.+)@(.+):(\d+)/(.+)', DATABASE_URL)
-    if match:
-        DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME = match.groups()
-    else:
-        DB_HOST = "localhost"
-        DB_PORT = "5432"
-        DB_USER = "postgres"
-        DB_PASSWORD = ""
-        DB_NAME = "les_analog"
+    DB_HOST = os.getenv("DB_HOST")
+    DB_PORT = os.getenv("DB_PORT")
+    DB_USER = os.getenv("DB_USER")
+    DB_PASSWORD = os.getenv("DB_PASSWORD")
+    DB_NAME = os.getenv("DB_NAME")
     
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
     TIMEZONE = os.getenv("TIMEZONE", "Europe/Moscow")
@@ -33,10 +25,6 @@ class Config:
             "password": cls.DB_PASSWORD,
             "database": cls.DB_NAME
         }
-    
-    @classmethod
-    def get_db_url(cls):
-        return cls.DATABASE_URL
 
 config = Config()
 
@@ -44,4 +32,4 @@ print(f"🔍 DB_HOST: {config.DB_HOST}")
 print(f"🔍 DB_PORT: {config.DB_PORT}")
 print(f"🔍 DB_USER: {config.DB_USER}")
 print(f"🔍 DB_NAME: {config.DB_NAME}")
-print(f"🔍 DATABASE_URL: {config.DATABASE_URL}")
+print(f"🔍 BOT_TOKEN: {config.BOT_TOKEN[:10]}..." if config.BOT_TOKEN else "❌ BOT_TOKEN не найден!")
