@@ -581,7 +581,8 @@ def main():
     
     # Инициализация БД
     try:
-        asyncio.create_task(init_db())
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(init_db())
         logger.info("✅ База данных инициализирована")
     except Exception as e:
         logger.error(f"❌ Ошибка инициализации БД: {e}")
