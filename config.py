@@ -1,5 +1,4 @@
 import os
-import re
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -8,24 +7,20 @@ class Config:
     # Telegram
     BOT_TOKEN = os.getenv("BOT_TOKEN")
     
-    DATABASE_URL = os.getenv("DATABASE_URL")
+    # ВРЕМЕННО жестко задаем URL
+    DATABASE_URL = "postgresql://postgre:3vnGJeGrXy6CChThJYBrdFBXNRj4n8Sa@dpg-da6jm9m1egvs739141t0-a/les_analog"
     
-    if DATABASE_URL:
-        match = re.match(r'postgresql://(.+):(.+)@(.+):(\d+)/(.+)', DATABASE_URL)
-        if match:
-            DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME = match.groups()
-        else:
-            DB_HOST = os.getenv("DB_HOST", "localhost")
-            DB_PORT = os.getenv("DB_PORT", "5432")
-            DB_USER = os.getenv("DB_USER", "postgres")
-            DB_PASSWORD = os.getenv("DB_PASSWORD", "")
-            DB_NAME = os.getenv("DB_NAME", "les_analog")
+    # Парсим URL
+    import re
+    match = re.match(r'postgresql://(.+):(.+)@(.+):(\d+)/(.+)', DATABASE_URL)
+    if match:
+        DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME = match.groups()
     else:
-        DB_HOST = os.getenv("DB_HOST", "localhost")
-        DB_PORT = os.getenv("DB_PORT", "5432")
-        DB_USER = os.getenv("DB_USER", "postgres")
-        DB_PASSWORD = os.getenv("DB_PASSWORD", "")
-        DB_NAME = os.getenv("DB_NAME", "les_analog")
+        DB_HOST = "localhost"
+        DB_PORT = "5432"
+        DB_USER = "postgres"
+        DB_PASSWORD = ""
+        DB_NAME = "les_analog"
     
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
     TIMEZONE = os.getenv("TIMEZONE", "Europe/Moscow")
@@ -42,6 +37,6 @@ class Config:
     
     @classmethod
     def get_db_url(cls):
-        return f"postgresql://{cls.DB_USER}:{cls.DB_PASSWORD}@{cls.DB_HOST}:{cls.DB_PORT}/{cls.DB_NAME}"
+        return cls.DATABASE_URL
 
 config = Config()
