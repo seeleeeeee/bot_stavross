@@ -13,6 +13,20 @@ from apscheduler.triggers.cron import CronTrigger
 from config import config
 from price_parser import parse_all_analogs, format_report
 from db_worker import init_db, get_subscribers, add_subscriber, remove_subscriber
+import asyncpg
+from config import config
+
+async def force_connect_db():
+    try:
+        conn = await asyncpg.connect(**config.get_db_config())
+        print("✅ ПРЯМОЕ ПОДКЛЮЧЕНИЕ К БД УСПЕШНО!")
+        await conn.close()
+        return True
+    except Exception as e:
+        print(f"❌ ОШИБКА ПОДКЛЮЧЕНИЯ: {e}")
+        return False
+
+asyncio.run(force_connect_db())
 
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
